@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dasbor Analisis Saham IHSG - Interaktif</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Brilliant Blues (Refined for Application) -->
+    <!-- Application Structure Plan: A multi-section SPA designed for user-driven exploration. The structure uses a sticky navigation bar to switch between four main views: 1) Dasbor Utama: for a high-level, immediate overview of the market. 2) Analisis Sektoral: for a deeper, comparative dive into sector performance with interactive filters. 3) Rekomendasi Saham: An actionable, filterable gallery of potential stock picks. 4) Strategi & Risiko: for educational content on execution and awareness. This task-oriented design allows users to move from general context to specific details logically, enhancing usability over a linear report. -->
+    <!-- Visualization & Content Choices: The application uses a combination of dynamic data presentations. Info -> Big number cards (HTML/CSS) for key stats. Change -> Line Chart (Chart.js) for IHSG trend. Compare -> Donut Chart (Chart.js) for sector weights and an INTERACTIVE Bar Chart (Chart.js) for performance, allowing users to switch timeframes (weekly/monthly), which dynamically updates the chart. Organize/Filter -> Interactive cards (HTML/CSS/JS) for stock picks, which can be filtered by sector buttons. Process -> Flowchart diagram (HTML/CSS) for trading strategy. This selection prioritizes interactivity and user control. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Softer light blue-gray */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            border-bottom-color: #2563eb;
+            color: #1e3a8a;
+        }
+        .filter-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .filter-btn.active {
+            background-color: #1e3a8a;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-md">
+        <nav class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <h1 class="text-xl font-bold text-blue-900">Dasbor Analisis Saham IHSG</h1>
+                <div class="hidden md:flex items-center space-x-8 text-sm font-semibold text-slate-600">
+                    <a href="#dashboard" class="nav-link active">Dasbor Utama</a>
+                    <a href="#sektoral" class="nav-link">Analisis Sektoral</a>
+                    <a href="#rekomendasi" class="nav-link">Rekomendasi Saham</a>
+                    <a href="#strategi" class="nav-link">Strategi & Risiko</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-6">
+        
+        <section id="dashboard" class="pt-8 mb-12">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-slate-900">Dasbor Utama Pasar</h2>
+                <p class="text-slate-600 max-w-2xl mx-auto mt-2">Gambaran umum kondisi pasar saham Indonesia (IHSG) saat ini untuk memberikan Anda pemahaman cepat terhadap sentimen dan tren utama.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <p class="text-sm font-medium text-slate-500">LEVEL IHSG SAAT INI</p>
+                    <p class="text-4xl font-bold text-blue-800 mt-1">7.311</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <p class="text-sm font-medium text-slate-500">TARGET RESISTANCE</p>
+                    <p class="text-4xl font-bold text-green-600 mt-1">7.400</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <p class="text-sm font-medium text-slate-500">LEVEL SUPPORT</p>
+                    <p class="text-4xl font-bold text-red-600 mt-1">7.150</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-xl">
+                 <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">Tren Pergerakan IHSG (3 Bulan)</h3>
+                 <div class="chart-container">
+                    <canvas id="ihsgTrendChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="sektoral" class="pt-16 mb-12">
+             <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-slate-900">Analisis Sektoral Interaktif</h2>
+                <p class="text-slate-600 max-w-2xl mx-auto mt-2">Pahami sektor mana yang menjadi motor penggerak IHSG dan bagaimana kinerjanya. Gunakan filter untuk melihat performa dalam rentang waktu yang berbeda.</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-xl">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 text-center">Komposisi Bobot Sektor</h3>
+                    <div class="chart-container" style="height:350px">
+                        <canvas id="sectorWeightChart"></canvas>
+                    </div>
+                </div>
+                <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-xl">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-slate-800">Kinerja Sektor</h3>
+                        <div class="flex items-center space-x-2">
+                             <label for="timeframe-selector" class="text-sm font-medium text-slate-600">Periode:</label>
+                             <select id="timeframe-selector" class="text-sm rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                 <option value="weekly" selected>Mingguan</option>
+                                 <option value="monthly">Bulanan</option>
+                             </select>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="sectorPerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="rekomendasi" class="pt-16 mb-12">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-slate-900">Rekomendasi Saham Potensial</h2>
+                <p class="text-slate-600 max-w-2xl mx-auto mt-2">Daftar saham pilihan dengan potensi keuntungan jangka pendek. Gunakan filter di bawah untuk menyortir saham berdasarkan sektornya.</p>
+            </div>
+            <div class="flex justify-center flex-wrap gap-3 mb-8">
+                <button data-filter="all" class="filter-btn active bg-slate-200 px-4 py-2 rounded-full font-semibold text-sm text-slate-700">Semua</button>
+                <button data-filter="Infrastruktur" class="filter-btn bg-slate-200 px-4 py-2 rounded-full font-semibold text-sm text-slate-700">Infrastruktur</button>
+                <button data-filter="Energi" class="filter-btn bg-slate-200 px-4 py-2 rounded-full font-semibold text-sm text-slate-700">Energi</button>
+            </div>
+            <div id="stock-gallery" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            </div>
+        </section>
+        
+        <section id="strategi" class="pt-16 mb-12">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-slate-900">Strategi & Manajemen Risiko</h2>
+                <p class="text-slate-600 max-w-2xl mx-auto mt-2">Bekali diri Anda dengan kerangka kerja untuk trading dan pemahaman akan risiko yang mungkin terjadi di pasar.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-xl">
+                    <h3 class="text-xl font-bold text-center text-slate-800 mb-6">Alur Strategi Trading</h3>
+                    <div class="flex flex-col items-center space-y-2 text-center">
+                        <div class="w-full max-w-xs bg-blue-100 border-l-4 border-blue-500 text-blue-800 font-semibold p-3 rounded-r-lg">1. Lakukan ENTRY</div>
+                        <div class="text-2xl text-blue-400">↓</div>
+                        <div class="w-full max-w-xs bg-slate-100 border-l-4 border-slate-500 p-3 rounded-r-lg">2. Pantau Harga Berkala</div>
+                        <div class="text-2xl text-slate-400">↓</div>
+                        <div class="w-full max-w-xs text-slate-600 font-semibold">Cek Kondisi</div>
+                        <div class="flex w-full max-w-md justify-center space-x-4">
+                            <div class="text-3xl text-green-400">↘</div>
+                            <div class="text-3xl text-red-400">↙</div>
+                        </div>
+                        <div class="flex w-full justify-center space-x-4">
+                             <div class="w-full max-w-[160px] bg-green-100 border-l-4 border-green-500 p-3 rounded-r-lg">
+                                 <p class="font-semibold text-green-800">Harga dekat Target?</p>
+                                 <p class="text-xs font-medium text-green-700 mt-1">→ Ambil Profit</p>
+                             </div>
+                             <div class="w-full max-w-[160px] bg-red-100 border-l-4 border-red-500 p-3 rounded-r-lg">
+                                 <p class="font-semibold text-red-800">Harga sentuh SL?</p>
+                                 <p class="text-xs font-medium text-red-700 mt-1">→ Batasi Kerugian</p>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-xl">
+                    <h3 class="text-xl font-bold text-center text-slate-800 mb-6">Faktor Risiko Utama</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start p-3 bg-slate-50 rounded-lg">
+                            <span class="text-red-500 text-xl font-bold mr-3">!</span>
+                            <div>
+                                <h4 class="font-semibold">Pelemahan Rupiah & Capital Outflow</h4>
+                                <p class="text-sm text-slate-600">Tekanan pada kurs dapat memicu investor asing menarik dananya.</p>
+                            </div>
+                        </li>
+                         <li class="flex items-start p-3 bg-slate-50 rounded-lg">
+                            <span class="text-red-500 text-xl font-bold mr-3">!</span>
+                            <div>
+                                <h4 class="font-semibold">Kebijakan Global & The Fed</h4>
+                                <p class="text-sm text-slate-600">Sentimen dari AS, terutama suku bunga, dapat menyebabkan volatilitas tinggi.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start p-3 bg-slate-50 rounded-lg">
+                            <span class="text-red-500 text-xl font-bold mr-3">!</span>
+                            <div>
+                                <h4 class="font-semibold">Fluktuasi Harga Komoditas</h4>
+                                <p class="text-sm text-slate-600">Pergerakan harga komoditas (batu bara, nikel, tembaga) sangat mempengaruhi saham energi.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center mt-12 py-8 bg-slate-800 text-slate-300">
+        <p class="text-sm"><strong>Disclaimer:</strong> Aplikasi ini bersifat edukatif dan analisis, bukan rekomendasi finansial.</p>
+        <p class="text-xs mt-2 text-slate-400">Lakukan riset mandiri (DYOR) sebelum membuat keputusan investasi. Dibuat pada 19 Juli 2025.</p>
+    </footer>
+
+    <script>
+    const stockData = [
+        { name: 'TLKM', fullName: 'PT Telkom Indonesia (Persero) Tbk.', sector: 'Infrastruktur', price: '2.750 - 2.770', tp: '2.900 - 3.000', sl: '2.610', rationale: 'Raksasa yang Bangkit Didukung Arus asing.' },
+        { name: 'ISAT', fullName: 'PT Indosat Tbk', sector: 'Infrastruktur', price: '2.310 - 2.340', tp: '2.500 - 2.720', sl: '1.840', rationale: 'Momentum Breakout dari Kisah Pertumbuhan AI.' },
+        { name: 'MEDC', fullName: 'PT Medco Energi Internasional Tbk.', sector: 'Energi', price: '1.255 - 1.300', tp: '1.350 - 1.470', sl: '1.186', rationale: 'Peluang Rebound Spekulatif.' },
+    ];
+
+    const performanceData = {
+        weekly: {
+            labels: ['Teknologi', 'Kesehatan', 'Keuangan', 'Energi', 'Industri', ['Transportasi &', 'Logistik'], 'Properti', ['Barang Konsumen', 'Non-Primer']],
+            values: [9.58, 1.77, 2.30, 4.95, 2.53, 3.22, 1.28, -0.84]
+        },
+        monthly: {
+            labels: ['Teknologi', 'Kesehatan', 'Keuangan', 'Energi', 'Industri', ['Transportasi &', 'Logistik'], 'Properti', ['Barang Konsumen', 'Non-Primer']],
+            values: [9.99, 1.96, 1.11, -1.10, -0.79, 0.89, 0.11, -5.44]
+        }
+    };
+    
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const tooltipTitleCallback = (tooltipItems) => {
+            const item = tooltipItems[0];
+            if (!item) return '';
+            let label = item.chart.data.labels[item.dataIndex];
+            return Array.isArray(label) ? label.join(' ') : label;
+        };
+
+        const chartJsDefaults = {
+            font: { family: "'Inter', sans-serif" }
+        };
+        Chart.defaults.font.family = "'Inter', sans-serif";
+
+        const ihsgTrendCtx = document.getElementById('ihsgTrendChart').getContext('2d');
+        new Chart(ihsgTrendCtx, {
+            type: 'line',
+            data: {
+                labels: ['Mei W1', 'Mei W3', 'Juni W1', 'Juni W3', 'Juli W1', 'Juli W3'],
+                datasets: [{
+                    label: 'IHSG',
+                    data: [7130, 7250, 7050, 6890, 7100, 7258],
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { title: tooltipTitleCallback } } } }
+        });
+
+        const sectorWeightCtx = document.getElementById('sectorWeightChart').getContext('2d');
+        new Chart(sectorWeightCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Keuangan', 'Energi', ['Barang Baku &', 'Industri'], ['Barang Konsumen', 'Primer'], 'Infrastruktur', 'Lainnya'],
+                datasets: [{
+                    data: [48.9, 3.2, 10.7, 8.3, 10, 8.9],
+                    backgroundColor: ['#1e3a8a', '#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd'],
+                    borderColor: '#f0f4f8',
+                    borderWidth: 4
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' }, tooltip: { callbacks: { title: tooltipTitleCallback } } } }
+        });
+
+        const sectorPerformanceCtx = document.getElementById('sectorPerformanceChart').getContext('2d');
+        const sectorPerformanceChart = new Chart(sectorPerformanceCtx, {
+            type: 'bar',
+            data: {
+                labels: performanceData.weekly.labels,
+                datasets: [{
+                    label: 'Perubahan (%)',
+                    data: performanceData.weekly.values,
+                    backgroundColor: (ctx) => ctx.raw >= 0 ? 'rgba(59, 130, 246, 0.7)' : 'rgba(239, 68, 68, 0.7)',
+                    borderColor: (ctx) => ctx.raw >= 0 ? '#2563eb' : '#ef4444',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { title: tooltipTitleCallback } } },
+                scales: { x: { title: { display: true, text: '% Perubahan' } } }
+            }
+        });
+        
+        document.getElementById('timeframe-selector').addEventListener('change', (e) => {
+            const timeframe = e.target.value;
+            const newData = performanceData[timeframe];
+            sectorPerformanceChart.data.labels = newData.labels;
+            sectorPerformanceChart.data.datasets[0].data = newData.values;
+            sectorPerformanceChart.update();
+        });
+
+        const stockGallery = document.getElementById('stock-gallery');
+        const renderStocks = (filter = 'all') => {
+            stockGallery.innerHTML = '';
+            const filteredStocks = filter === 'all' ? stockData : stockData.filter(s => s.sector === filter);
+            filteredStocks.forEach(stock => {
+                const stockCard = `
+                    <div class="stock-card bg-white rounded-xl shadow-lg p-5 border-t-4 border-blue-600 transform hover:-translate-y-1 transition-transform duration-300" data-sector="${stock.sector}">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-2xl font-bold text-slate-800">${stock.name}</h3>
+                            <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full">${stock.sector}</span>
+                        </div>
+                        <p class="text-sm text-slate-500 mb-3">${stock.fullName}</p>
+                        <p class="text-slate-600 mb-4 text-sm">${stock.rationale}</p>
+                        <div class="bg-slate-50 p-3 rounded-lg text-sm space-y-2">
+                            <div class="flex justify-between"><span>Harga:</span><span class="font-bold">Rp ${stock.price}</span></div>
+                            <div class="flex justify-between text-green-600"><span>Target:</span><span class="font-bold">Rp ${stock.tp}</span></div>
+                            <div class="flex justify-between text-red-600"><span>Stop Loss:</span><span class="font-bold">Rp ${stock.sl}</span></div>
+                        </div>
+                    </div>`;
+                stockGallery.innerHTML += stockCard;
+            });
+        };
+        renderStocks();
+
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                renderStocks(button.dataset.filter);
+            });
+        });
+
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('main section');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    navLinks.forEach(link => {
+                        link.classList.toggle('active', link.getAttribute('href').substring(1) === entry.target.id);
+                    });
+                }
+            });
+        }, { rootMargin: '-50% 0px -50% 0px' });
+        sections.forEach(section => observer.observe(section));
+    });
+    </script>
+</body>
+</html>
+```
